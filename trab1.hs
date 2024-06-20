@@ -51,7 +51,7 @@ instructionExe (opcode, addr) mem cpu =
         4  -> (sto addr mem cpu, cpu)
         6  -> (mem, cpu {pc = addr})
         8  -> if eqz cpu then (mem, cpu {pc = addr}) else (mem, cpu {pc = pc cpu + 2})
-        10 -> if acc cpu == fetchValue addr mem then (mem, cpu {acc = 0, eqz = True}) else (mem, cpu {acc = 1, eqz = False})        14 -> cpu {acc = fetchValue addr mem + acc cpu}
+        10 -> if acc cpu == fetchValue addr mem then (mem, cpu {acc = 0, eqz = True}) else (mem, cpu {acc = 1, eqz = False})        
         14 -> (mem, cpu {acc = acc cpu + fetchValue addr mem})
         18 -> (mem, cpu {acc = acc cpu * fetchValue addr mem})
         20 -> (mem, cpu)  
@@ -71,35 +71,22 @@ simulateComputer mem cpu =
     let cpu1 = execution mem cpu 
         -- depois, executo a instrucao e recebo a memoria e a cpu atualizadas
         (updatedMem, updatedCPU) = instructionExe (instructionRegister cpu1) mem cpu1
-        in if fst (instructionRegister cpu1) == 20 then updatedCPU else simulateComputer updatedMem, updatedCPU
+        in if fst (instructionRegister cpu1) == 20 then updatedCPU else simulateComputer updatedMem updatedCPU
 
 
--- o programa vai ser carregado previamente na memoria e o contador vai ser responsavel por avançando as instrucoes
-
-
--- mem = [(0,2), (1,240), (2,3), (240,10)]
--- while pc != 20: 
---     pc <- pc + 2
---     registrador_instrucoes <- (0,240)
---     executa_instrucao registrador_instrucoes 
-
-
--- -- Função para testar o programa
--- main :: IO ()
--- main = do
---     -- Exemplo de memória inicial
---     let mem = [
---                 (0, 2), (1, 240),  -- LOD 240
---                 (2, 16), (3, 241), -- MUL 241
---                 (4, 4), (5, 251),  -- STO 251
---                 (6, 20),           -- HLT
---                 (240, 10),         -- Valor de A
---                 (241, 20)          -- Valor de B
---                ]
---         cpu = CPU {acc = 0, pc = 0, eqz = False}
---         finalCPU = simulate mem cpu
---     print finalCPU
-
+-- Função para testar o programa
+main :: IO ()
+main = do
+    -- Exemplo (1) 
+    let mem = [
+                (0, 2), (1, 240),  -- LOD 240
+                (2, 14), (3, 241), -- 2 ADD 241
+                (4, 4), (5, 251),  -- 4 STO 251
+                (6, 20)            -- HLT
+               ]
+        cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
+        finalCPU = simulateComputer mem cpu
+    print finalCPU
 
 
 
