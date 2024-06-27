@@ -54,6 +54,7 @@ instructionExe (opcode, addr) mem cpu =
         8  -> if eqz cpu then (mem, cpu {pc = addr}) else (mem, cpu {pc = pc cpu + 2})
         10 -> if acc cpu == fetchValue addr mem then (mem, cpu {acc = 0, eqz = True}) else (mem, cpu {acc = 1, eqz = False})        
         14 -> (mem, cpu {acc = acc cpu + fetchValue addr mem})
+        16 -> (mem, cpu {acc = acc cpu - fetchValue addr mem})
         18 -> (mem, cpu {acc = acc cpu * fetchValue addr mem})
         20 -> (mem, cpu)  
 
@@ -80,12 +81,20 @@ main :: IO ()
 main = do
     -- Exemplo (1) 
     -- let mem = [
-    --             (0, 2), (1, 240),  -- LOD 240
-    --             (2, 14), (3, 241), -- 2 ADD 241
-    --             (4, 4), (5, 251),  -- 4 STO 251
-    --             (6, 20)            -- HLT
+    --             (0, 2), (1, 240),  -- LOD 240 // carrega o valor do endereço 240 no acc
+    --             (2, 14), (3, 241), -- 2 ADD 241 // soma o valor do acc(end 240) com o valor do 241
+    --             (4, 4), (5, 251),  -- 4 STO 251 // carrega em 251 o resultado do acc
+    --             (6, 20)            -- HLT // pra encerrar
     --            ]
-    let mem = [(0,2),(1,240),(2,14),(3,241),(4,4),(5,251),(6,20),(7,18),(240,10),(241,11),(251,0)]
+    let mem = [(0,2),(1,240),
+                (2,14),(3,241),
+                (4,16), (5,242),
+                (6,4),(7,251),
+                (8,20),(9,18),
+                (240,100),
+                (241,50),
+                (242,2),
+                (251,0)]
         cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
         (finalMem, finalCPU) = simulateComputer mem cpu
     print finalCPU
