@@ -35,6 +35,7 @@ fetchValue addr mem =
         Nothing -> error "Endereco de memoria nao encontrado"
 
 
+
 -- sto: Armazena o conteúdo do registrador acumulador (ACC) no endereço de memória <end>.
 sto :: Address -> Memory -> CPU -> Memory
 sto addr [] cpu = []
@@ -65,28 +66,30 @@ execution mem cpu =
     in cpu {instructionRegister = instr, pc = pc cpu + 2}
 
 
-simulateComputer :: Memory -> CPU -> CPU 
+simulateComputer :: Memory -> CPU -> (Memory, CPU) 
 simulateComputer mem cpu = 
    -- primeiramente, eh preciso carregar o registrador de instrucoes com a instrucao a ser executada
     let cpu1 = execution mem cpu 
         -- depois, executo a instrucao e recebo a memoria e a cpu atualizadas
         (updatedMem, updatedCPU) = instructionExe (instructionRegister cpu1) mem cpu1
-        in if fst (instructionRegister cpu1) == 20 then updatedCPU else simulateComputer updatedMem updatedCPU
+        in if fst (instructionRegister cpu1) == 20 then (updatedMem, updatedCPU) else simulateComputer updatedMem updatedCPU
 
 
 -- Função para testar o programa
 main :: IO ()
 main = do
     -- Exemplo (1) 
-    let mem = [
-                (0, 2), (1, 240),  -- LOD 240
-                (2, 14), (3, 241), -- 2 ADD 241
-                (4, 4), (5, 251),  -- 4 STO 251
-                (6, 20)            -- HLT
-               ]
+    -- let mem = [
+    --             (0, 2), (1, 240),  -- LOD 240
+    --             (2, 14), (3, 241), -- 2 ADD 241
+    --             (4, 4), (5, 251),  -- 4 STO 251
+    --             (6, 20)            -- HLT
+    --            ]
+    let mem = [(0,2),(1,240),(2,14),(3,241),(4,4),(5,251),(6,20),(7,18),(240,10),(241,11),(251,0)]
         cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
-        finalCPU = simulateComputer mem cpu
+        (finalMem, finalCPU) = simulateComputer mem cpu
     print finalCPU
+    print finalMem
 
 
 
