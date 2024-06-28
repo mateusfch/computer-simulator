@@ -13,17 +13,6 @@ data CPU = CPU {
     instructionRegister :: (Int, Int) -- Registrador de instrucoes
 } deriving (Show)
 
--- instruções possíveis
-data Instruction = LOD Address
-                 | STO Address
-                 | JMP Address
-                 | JMZ Address
-                 | CPE Address
-                 | ADD Address
-                 | SUB Address
-                 | NOP
-                 | HLT
-                 deriving (Show, Eq)
 
 
 -- funcao para encontrar o valor que esta no endereco de memoria especificado
@@ -31,9 +20,8 @@ data Instruction = LOD Address
 fetchValue :: Address -> Memory -> Value
 fetchValue addr mem =
     case lookup addr mem of
-        Just val -> val
-        Nothing -> error "Endereco de memoria nao encontrado"
-
+        Just val -> val 
+        Nothing -> error ("Endereco de memoria nao encontrado: " ++ show addr)
 
 
 -- sto: Armazena o conteúdo do registrador acumulador (ACC) no endereço de memória <end>.
@@ -45,19 +33,35 @@ sto addr ((addr_t,val_t):xs) cpu
 
 
 
+-- instructionExe :: (Int, Int) -> Memory -> CPU -> (Memory, CPU)
+-- instructionExe (opcode, addr) mem cpu = 
+--     case opcode of 
+--         2 -> (mem, cpu {acc = fetchValue addr mem})
+--         4  -> (sto addr mem cpu, cpu)
+--         6  -> (mem, cpu {pc = addr})
+--         8  -> if acc cpu == 0 then (mem, cpu {pc = addr}) else (mem, cpu {pc = pc cpu})
+--         10 -> if acc cpu == fetchValue addr mem then (mem, cpu {acc = 0, eqz = True}) else (mem, cpu {acc = 1, eqz = False})        
+--         14 -> (mem, cpu {acc = acc cpu + fetchValue addr mem})
+--         16 -> (mem, cpu {acc = acc cpu - fetchValue addr mem})
+--         18 -> (mem, cpu {acc = acc cpu * fetchValue addr mem})
+--         20 -> (mem, cpu)  
+
 instructionExe :: (Int, Int) -> Memory -> CPU -> (Memory, CPU)
 instructionExe (opcode, addr) mem cpu = 
     case opcode of 
-        2 -> (mem, cpu {acc = fetchValue addr mem})
+        2 -> (mem, updateAcc (fetchValue addr mem) cpu)
         4  -> (sto addr mem cpu, cpu)
         6  -> (mem, cpu {pc = addr})
-        8  -> if eqz cpu then (mem, cpu {pc = addr}) else (mem, cpu {pc = pc cpu + 2})
+        8  -> if eqz cpu then (mem, cpu {pc = addr}) else (mem, cpu {pc = pc cpu})
         10 -> if acc cpu == fetchValue addr mem then (mem, cpu {acc = 0, eqz = True}) else (mem, cpu {acc = 1, eqz = False})        
-        14 -> (mem, cpu {acc = acc cpu + fetchValue addr mem})
-        16 -> (mem, cpu {acc = acc cpu - fetchValue addr mem})
-        18 -> (mem, cpu {acc = acc cpu * fetchValue addr mem})
+        14 -> (mem, updateAcc (acc cpu + fetchValue addr mem) cpu)
+        16 -> (mem, updateAcc (acc cpu - fetchValue addr mem) cpu)
+        18 -> (mem, cpu)
         20 -> (mem, cpu)  
 
+-- Atualiza o acumulador e a flag EQZ
+updateAcc :: Value -> CPU -> CPU
+updateAcc newAcc cpu = cpu { acc = newAcc, eqz = newAcc == 0 }
 
 -- execution: para carregar o registrador de instruções e atualizar o contador de instruções
 execution :: Memory -> CPU -> CPU
@@ -80,72 +84,46 @@ simulateComputer mem cpu =
 main :: IO ()
 main = do
     -- Exemplo (1) 
-    -- let mem = [
-    --             (0, 2), (1, 240),  -- LOD 240 // carrega o valor do endereço 240 no acc
-    --             (2, 14), (3, 241), -- 2 ADD 241 // soma o valor do acc(end 240) com o valor do 241
-    --             (4, 4), (5, 251),  -- 4 STO 251 // carrega em 251 o resultado do acc
-    --             (6, 20)            -- HLT // pra encerrar
-    --            ]
-    let mem = [(0,2),(1,240),
-                (2,14),(3,241),
-                (4,16), (5,242),
-                (6,4),(7,251),
-                (8,20),(9,18),
-                (240,100),
-                (241,50),
-                (242,2),
-                (251,0)]
-        cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
-        (finalMem, finalCPU) = simulateComputer mem cpu
+    -- let mem = [(0,2),(1,240),
+    --             (2,14),(3,241),
+    --             (4,16), (5,242),
+    --             (6,4),(7,251),
+    --             (8,20),(9,18),
+    --             (240,100),
+    --             (241,50),
+    --             (242,2),
+    --             (251,0)]
+    
+    -- Exemplo (2)
+    let mem = [
+                -- op1:3  op2:4 --> res = op1*op2
+                (0,2),(1, 240), -- armazenei 3 no acumulador
+                -- (2,4),(3,242), -- carreguei o valor do acumulador (3) no end. 242
+                (2,2),(3,241), -- armazenei 4 no acumulador 
+                (4,4),(5,243),  -- carreguei o valor do acumulador (4) no end. 243
+                
+                (6,16), (7,246), -- (1a passada) acumulador = 4 --> subtrai 1 do 4 --> acumulador = 3
+                (8, 4), (9, 243), -- carreguei no end. 243 o estado do acumulador subtraido
+                (10, 2), (11, 242), -- carreguei no acumulador o valor de 242(inicialmente 0)
+                (12,14), (13,240),   -- soma com 3 (conteudo do 240)
+                (14, 4), (15, 242), -- carreguei o valor da soma no 242 
+                (16, 2), (17, 243),
+                (18, 8), (19,22),
+                (20, 6), (21,6),
+                (22, 20), (23,18),
+                
+                
+                (240,8),
+                (241,4),
+                (242,0),
+                (243,0),
+                (244,0),
+                (245,0),
+                (246,1)
+                
+            ]
+    
+    let cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
+    let (finalMem, finalCPU) = simulateComputer mem cpu
     print finalCPU
     print finalMem
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- DEFINICAO DAS INSTRUCOES COMO FUNCOES
-
--- -- lod: Carrega o conteúdo do endereço de memória <end> no registrador acumulador (ACC).
--- lod :: Address -> Memory -> CPU -> CPU
--- lod addr mem cpu = cpu {acc = fetchValue addr mem}
-
-
-
-
--- jmp: Desvio incondicional: carrega no contador de instruções o valor <end> forçando com que a próxima instrução
--- a ser executada seja a que se encontra no endereço de memória <end>
--- jmp :: Address -> CPU -> CPU 
--- jmp addr cpu = cpu{pc = addr}
-
--- -- jmz: Desvio condicional: funcionamento análogo ao da instrução JMP com a diferença que a carga do contador de instruções 
--- -- só ocorre se o valor do acumulador for igual a zero (de acordo com a flag EQZ).
--- jmz :: Address -> CPU -> CPU 
--- jmz addr cpu = if eqz cpu then cpu{pc = addr} else cpu{pc = pc cpu + 2}
-
--- -- add: Adiciona o conteúdo do endereço de memória <end> ao conteúdo armazenado no acumulador (ACC) e armazena a resposta no próprio acumulador.
--- add :: Address -> Memory -> CPU -> CPU
--- add addr mem cpu = cpu {acc = fetchValue addr mem + acc cpu }
-
--- -- sub: Subtrai o conteúdo do endereço de memória <end> do conteúdo do acumulador (ACC) e armazena a resposta no próprio acumulador.
--- sub :: Address -> Memory -> CPU -> CPU
--- sub addr mem cpu = cpu {acc = fetchValue addr mem - acc cpu }
-
--- -- cpe: Se o conteúdo do endereço <end> for igual ao acumulador, coloca 0 no acumulador, caso contrário coloca 1
--- cpe :: Address -> Memory -> CPU -> CPU
--- cpe addr mem cpu = if acc cpu == fetchValue addr mem then cpu{acc=0, eqz=True} else cpu{acc=1, eqz=False}
-
--- -- nop: Não executa ação nenhuma (No OPeration).
--- nop :: CPU -> CPU 
--- nop cpu = cpu{pc = pc cpu + 2}
