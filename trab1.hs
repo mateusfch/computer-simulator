@@ -26,8 +26,9 @@ sto :: Address -> Memory -> CPU -> Memory
 sto addr [] cpu = []
 sto addr ((addr_t,val_t):xs) cpu 
     | addr_t == addr = (addr_t, acc cpu):xs 
-    | otherwise = (addr_t, val_t) : sto addr xs cpu 
+    | otherwise = (addr_t, val_t):sto addr xs cpu 
 
+-- instructionExe: executa a instrucao corrente e atualiza a memoria e a cpu quando necessario
 instructionExe :: (Int, Int) -> Memory -> CPU -> (Memory, CPU)
 instructionExe (opcode, addr) mem cpu = 
     case opcode of 
@@ -45,17 +46,17 @@ instructionExe (opcode, addr) mem cpu =
 updateAcc :: Value -> CPU -> CPU
 updateAcc newAcc cpu = cpu { acc = newAcc, eqz = newAcc == 0 }
 
--- execution: carrega o registrador de instruções e atualiza o contador de instruções
-execution :: Memory -> CPU -> CPU
-execution mem cpu = 
+-- loadInstruction: carrega o registrador de instrucoes e o pc
+loadInstruction :: Memory -> CPU -> CPU
+loadInstruction mem cpu = 
     let 
     instr = (fetchValue(pc cpu) mem, fetchValue(pc cpu +1) mem)
     in cpu {instructionRegister = instr, pc = pc cpu + 2}
 
 simulateComputer :: Memory -> CPU -> (Memory, CPU) 
 simulateComputer mem cpu = 
-   -- primeiramente, eh preciso carregar o registrador de instrucoes com a instrucao a ser executada
-    let cpu1 = execution mem cpu 
+   -- primeiramente, eh preciso carregar o registrador de instrucoes com a instrucao a ser executada e atualizar o pc
+    let cpu1 = loadInstruction mem cpu 
         -- depois, executo a instrucao e recebo a memoria e a cpu atualizadas
         (updatedMem, updatedCPU) = instructionExe (instructionRegister cpu1) mem cpu1
         in if fst (instructionRegister cpu1) == 20 then (updatedMem, updatedCPU) else simulateComputer updatedMem updatedCPU
@@ -97,8 +98,8 @@ main = do
                 (22, 6), (23,8), -- desvio (jmp) pro inicio pra uma nova iteracao 
                 (24, 20), (25,18),
                 
-                (240,13), -- A
-                (241,0), -- B
+                (240,2), -- A
+                (241,2), -- B
                 (242,0), -- B sendo subtraido
                 (246, 1), -- cte 1
                 (251,0) -- resp
