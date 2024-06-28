@@ -1,4 +1,4 @@
--- tipos simbolicos
+-- tipos 
 type Address = Int
 type Value = Int
 
@@ -12,8 +12,6 @@ data CPU = CPU {
     eqz :: Bool,     -- Flag EQZ
     instructionRegister :: (Int, Int) -- Registrador de instrucoes
 } deriving (Show)
-
-
 
 -- fetchValue: encontra o valor que esta no endereco de memoria especificado
 fetchValue :: Address -> Memory -> Value
@@ -54,7 +52,6 @@ execution mem cpu =
     instr = (fetchValue(pc cpu) mem, fetchValue(pc cpu +1) mem)
     in cpu {instructionRegister = instr, pc = pc cpu + 2}
 
-
 simulateComputer :: Memory -> CPU -> (Memory, CPU) 
 simulateComputer mem cpu = 
    -- primeiramente, eh preciso carregar o registrador de instrucoes com a instrucao a ser executada
@@ -63,11 +60,13 @@ simulateComputer mem cpu =
         (updatedMem, updatedCPU) = instructionExe (instructionRegister cpu1) mem cpu1
         in if fst (instructionRegister cpu1) == 20 then (updatedMem, updatedCPU) else simulateComputer updatedMem updatedCPU
 
-
 -- Função para testar o programa
 main :: IO ()
 main = do
+    
     -- Exemplo (1) 
+    -- Resp = A + B – 2
+    
     -- let mem = [(0,2),(1,240),
     --             (2,14),(3,241),
     --             (4,16), (5,242),
@@ -79,58 +78,60 @@ main = do
     --             (251,0)]
     
     -- Exemplo (2)
-    -- let mem = [
-    --             -- op1:3  op2:4 --> res = op1*op2
-    --             (0,2),(1, 240), -- armazenei 3 no acumulador
-    --             -- (2,4),(3,242), -- carreguei o valor do acumulador (3) no end. 242
-    --             (2,2),(3,241), -- armazenei 4 no acumulador 
-    --             (4,4),(5,243),  -- carreguei o valor do acumulador (4) no end. 243
-                
-    --             (6,16), (7,246), -- (1a passada) acumulador = 4 --> subtrai 1 do 4 --> acumulador = 3
-    --             (8, 4), (9, 243), -- carreguei no end. 243 o estado do acumulador subtraido
-    --             (10, 2), (11, 242), -- carreguei no acumulador o valor de 242(inicialmente 0)
-    --             (12,14), (13,240),   -- soma com 3 (conteudo do 240)
-    --             (14, 4), (15, 242), -- carreguei o valor da soma no 242 
-    --             (16, 2), (17, 243),
-    --             (18, 8), (19,22),
-    --             (20, 6), (21,6),
-    --             (22, 20), (23,18),
-    --             (240,13),
-    --             (241,4),
-    --             (242,0),
-    --             (243,0),
-    --             (244,0),
-    --             (245,0),
-    --             (246,1)
-    --         ]
-    -- Exemplo (3)
+    -- Resp = A * B;
+
     let mem = [
-                  (0, 2), (1,240),
-                  (2, 14), (3, 245),
-                  (4,4), (5,240),
-                  
-                  (6,2), (7, 251),
-                  (8,14), (9,246),
-                  (10, 4), (11, 251),
+                (0, 2), (1, 240), -- armazenei o valor de A no acumulador
+                (2, 8), (3,24), -- 0 * B --> resp=0,
+                (4,2), (5,241), -- armazenei o valor de B no acumulador
+                (6,8), (7,24), -- A * 0 --> resp = 0
 
-                  (12, 2), (13, 241),
-                  (14, 16), (15, 245),
-                  (16, 4), (17, 241),
-
-                  (18,8), (19,22),
-                  (20, 6), (21, 0),
-                  (22, 20), (23, 18),
-                  
-                  (240, 0), -- a
-                  (241, 5), -- contador do loop
-                  (245, 1), -- valor cte que será somado ao a (a = a + 1)
-                  (246, 2), -- valor cte que será somado ao resp
-                  (251, 1) -- resp
-
+                (8,16), (9,246), --  subtrai uma unidade do acumulador 
+                (10, 4), (11, 242), -- carreguei no end. 242 o estado do acumulador subtraido
+                (12, 2), (13, 251), -- carrego o valor atual de resp no acumulador
+                (14,14), (15,240),   -- somo A no acumulador
+                (16, 4), (17, 251), -- carrego o resultado da soma em resp
+                
+                (18, 2), (19, 242), -- carrego no acumulador o valor de B sendo subtraido
+                (20, 8), (21,24), -- desvio (jmz) pro fim se acumulador = 0
+                (22, 6), (23,8), -- desvio (jmp) pro inicio pra uma nova iteracao 
+                (24, 20), (25,18),
+                
+                (240,13), -- A
+                (241,0), -- B
+                (242,0), -- B sendo subtraido
+                (246, 1), -- cte 1
+                (251,0) -- resp
             ]
+   
+    
+    -- Exemplo (3)
+    -- A = 0; Resp = 1; while(A < 5) { A = A + 1; Resp = Resp + 2; }
+    -- let mem = [
+    --               (0, 2), (1,240),
+    --               (2, 14), (3, 245),
+    --               (4,4), (5,240),
+                  
+    --               (6,2), (7, 251),
+    --               (8,14), (9,246),
+    --               (10, 4), (11, 251),
+
+    --               (12, 2), (13, 241),
+    --               (14, 16), (15, 245),
+    --               (16, 4), (17, 241),
+
+    --               (18,8), (19,22),
+    --               (20, 6), (21, 0),
+    --               (22, 20), (23, 18),
+                  
+    --               (240, 0), -- a
+    --               (241, 5), -- contador do loop
+    --               (245, 1), -- valor cte que será somado ao a (a = a + 1)
+    --               (246, 2), -- valor cte que será somado ao resp
+    --               (251, 1) -- resp
+    --         ]
     let cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
     let (finalMem, finalCPU) = simulateComputer mem cpu
     print finalCPU
     print finalMem
 
--- 
