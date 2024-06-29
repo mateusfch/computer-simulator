@@ -62,11 +62,29 @@ simulateComputer mem cpu =
         in if fst (instructionRegister cpu1) == 20 then (updatedMem, updatedCPU) else simulateComputer updatedMem updatedCPU
 
 
+memoryParser :: String -> Memory
+memoryParser contents = map read(lines contents)
 
 -- Função para testar o programa
 main :: IO ()
 main = do
     
+    contents <- readFile "prog3.txt"
+    let mem = memoryParser contents 
+    let cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
+    let (finalMem, finalCPU) = simulateComputer mem cpu
+    
+    print finalMem
+    putStrLn "TELA - Enderecos de memoria de video"
+    putStrLn $ "ENDERECO 251: " ++ show (fetchValue 251 finalMem)
+    putStrLn $ "ENDERECO 252: " ++ show (fetchValue 252 finalMem)
+    putStrLn $ "ENDERECO 253: " ++ show (fetchValue 253 finalMem)
+    putStrLn $ "ENDERECO 254: " ++ show (fetchValue 254 finalMem)
+    putStrLn $ "ENDERECO 255: " ++ show (fetchValue 255 finalMem)
+
+
+
+
     -- Exemplo (1) 
     -- Resp = A + B – 2
     
@@ -120,39 +138,29 @@ main = do
     
     -- Exemplo (3)
     -- A = 0; Resp = 1; while(A < 5) { A = A + 1; Resp = Resp + 2; }
-    let mem = [
-                  (0, 2), (1,240), -- lod: carrega o valor de A no acc
-                  (2, 10), (3,241), -- cpe: A == 5 ? acc=0:1
-                  (4, 8), (5, 20), -- jmz: acc==0 --> fim
-                  (6, 2), (7,240), -- lod: carrega o valor de A no acc
-                  (8, 14), (9, 245), -- jmz: soma +1 ao acc
-                  (10,4), (11,240), -- sto: carrega o valor de acc em A
+    -- let mem = [
+    --               (0, 2), (1,240), -- lod: carrega o valor de A no acc
+    --               (2, 10), (3,241), -- cpe: A == 5 ? acc=0:1
+    --               (4, 8), (5, 20), -- jmz: acc==0 --> fim
+    --               (6, 2), (7,240), -- lod: carrega o valor de A no acc
+    --               (8, 14), (9, 245), -- jmz: soma +1 ao acc
+    --               (10,4), (11,240), -- sto: carrega o valor de acc em A
                   
-                  (12,2), (13, 251), -- lod: carrega o valor de resp no acc
-                  (14,14), (15,246), -- add: soma +2 ao acc
-                  (16, 4), (17, 251), -- sto: carrega o valor de acc em resp
+    --               (12,2), (13, 251), -- lod: carrega o valor de resp no acc
+    --               (14,14), (15,246), -- add: soma +2 ao acc
+    --               (16, 4), (17, 251), -- sto: carrega o valor de acc em resp
 
-                  (18,6), (19,0), -- jmp: volta para 0, para continuar a iteracao
-                  (20, 20), (21,18), --hlt: -- encerra o ciclo de execucao
+    --               (18,6), (19,0), -- jmp: volta para 0, para continuar a iteracao
+    --               (20, 20), (21,18), --hlt: -- encerra o ciclo de execucao
 
-                  (240, 0), -- A
-                  (241, 5), -- valor associado ao  loop
-                  (245, 1), -- valor cte que será somado ao A (A = A + 1)
-                  (246, 2), -- valor cte que será somado ao resp
-                  (251, 1), -- resp
-                  (252,0), -- endereco de video
-                  (253,0), -- endereco de video
-                  (254,0), -- endereco de video
-                  (255,0) -- endereco de video
-            ]
-    let cpu = CPU {acc = 0, pc = 0, eqz = False, instructionRegister = (0,0)}
-    let (finalMem, finalCPU) = simulateComputer mem cpu
-    print finalMem
-    putStrLn "TELA - Enderecos de memoria de video"
-    putStrLn $ "ENDERECO 251: " ++ show (fetchValue 251 finalMem)
-    putStrLn $ "ENDERECO 252: " ++ show (fetchValue 252 finalMem)
-    putStrLn $ "ENDERECO 253: " ++ show (fetchValue 253 finalMem)
-    putStrLn $ "ENDERECO 254: " ++ show (fetchValue 254 finalMem)
-    putStrLn $ "ENDERECO 255: " ++ show (fetchValue 255 finalMem)
-
+    --               (240, 0), -- A
+    --               (241, 5), -- valor associado ao  loop
+    --               (245, 1), -- valor cte que será somado ao A (A = A + 1)
+    --               (246, 2), -- valor cte que será somado ao resp
+    --               (251, 1), -- resp
+    --               (252,0), -- endereco de video
+    --               (253,0), -- endereco de video
+    --               (254,0), -- endereco de video
+    --               (255,0) -- endereco de video
+    --         ]
 
